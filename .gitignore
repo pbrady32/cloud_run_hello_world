@@ -1,3 +1,6 @@
+terraform/.terraform
+terraform/umms-hernia-api-dev-7c7f200c2799.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
