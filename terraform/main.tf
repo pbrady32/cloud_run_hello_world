@@ -28,20 +28,15 @@ resource "google_storage_bucket" "terraform_state_bucket" {
   }
 }
 
-# Create a folder named 'terraform' in our terraform_demo_state_bucket
-resource "google_storage_bucket_object" "terraform_state_bucket_object" {
-  name   = "terraform/"
-  bucket = google_storage_bucket.terraform_state_bucket.name
-  content_type = "application/x-directory"
+variable "state_prefix" {
+  default = "terraform"
 }
 
-# The backend configuration holds our state file, so we can obtian a lock on it 
-# to prevent team members from overwriting each other's changes
-terraform {
-  backend "gcs" {
-    bucket = "terraform_demo_state_bucket"
-    prefix = "terraform" 
-   }
+output "backend_configuration" {
+  value = {
+    bucket_name = google_storage_bucket.terraform_state_bucket.name
+    prefix      = var.state_prefix
+  }
 }
 
 # --------------------------------------------------------------------------------------------------
@@ -52,7 +47,7 @@ terraform {
 # For this case it doesn't need any other permissions
 # because it's not calling any other Google APIs
 resource "google_service_account" "service_account" {
-  account_id   = "cloud-run-hello-world-service-account"
+  account_id   = "cloud-run-h-world-sa"
   display_name = "Cloud Run Hello World Service Account"
 }
 
@@ -64,11 +59,15 @@ resource "google_service_account" "service_account" {
 # This will be used to trigger Cloud Build when a commit is pushed to GitHub
 resource "google_sourcerepo_repository" "my_repo" {
   name = "cloud-run-hello-world-repo"
-  description = "Cloud Run API Source Repository"
-  mirrorConfig {
-    url = "https://github.com/pbrady32/cloud_run_hello_world"
-    }
 }
+
+# resource "null_resource" "create_mirrored_repo" {
+#   depends_on = [google_project_service.sourcerepo]
+
+#   provisioner "local-exec" {
+#     command = "gcloud source repos create cloud-run-hello-world-repo --project=<YOUR_PROJECT_ID> --mirror-url=https://github.com/pbrady32/cloud_run_hello_world"
+#   }
+# }
 
 # --------------------------------------------------------------------------------------------------
 # CREATE CLOUD RUN SERVICE
